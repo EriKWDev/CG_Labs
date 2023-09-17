@@ -176,7 +176,7 @@ edaf80::Assignment3::run()
 			show_logs = !show_logs;
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
 			show_gui = !show_gui;
-		if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
+		if (inputHandler.GetKeycodeState(GLFW_KEY_F1) & JUST_RELEASED)
 			mWindowManager.ToggleFullscreenStatusForWindow(window);
 
 

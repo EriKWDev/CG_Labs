@@ -43,12 +43,16 @@ void
 edaf80::Assignment2::run()
 {
 	// Load the sphere geometry
-	auto const shape = parametric_shapes::createCircleRing(2.0f, 0.75f, 40u, 4u);
+	// auto const shape = parametric_shapes::createSphere(0.15f, 10u, 10u);
+	// auto const shape = parametric_shapes::createSphere(0.15f, 3u, 3u);
+	auto const shape = parametric_shapes::createCircleRing(1.0f, 0.75f, 40u, 4u);
+	// auto const shape = parametric_shapes::createQuad(0.25, 0.15);
 	if (shape.vao == 0u)
 		return;
 
 	// Set up the camera
-	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 1.0f, 9.0f));
+	// mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 0.5f));
+	mCamera.mWorld.SetTranslate(glm::vec3(0.0, 1.0, 9.0));
 	mCamera.mMouseSensitivity = glm::vec2(0.003f);
 	mCamera.mMovementSpeed = glm::vec3(3.0f); // 3 m/s => 10.8 km/h
 
@@ -125,10 +129,10 @@ edaf80::Assignment2::run()
 	// at runtime through the "Scene Controls" window.
 	bool show_control_points = true;
 
-	auto circle_rings = Node();
-	circle_rings.set_geometry(shape);
-	circle_rings.set_program(&fallback_shader, set_uniforms);
-	TRSTransformf& circle_rings_transform_ref = circle_rings.get_transform();
+	auto the_node = Node();
+	the_node.set_geometry(shape);
+	the_node.set_program(&fallback_shader, set_uniforms);
+	TRSTransformf& the_node_transform_ref = the_node.get_transform();
 
 
 	//! \todo Create a tesselated sphere and a tesselated torus
@@ -140,7 +144,7 @@ edaf80::Assignment2::run()
 
 
 	auto const control_point_sphere = parametric_shapes::createSphere(0.1f, 10u, 10u);
-	std::array<glm::vec3, 9> control_point_locations = {
+	std::array<glm::vec3, 9> control_points = {
 		glm::vec3( 0.0f,  0.0f,  0.0f),
 		glm::vec3( 1.0f,  1.8f,  1.0f),
 		glm::vec3( 2.0f,  1.2f,  2.0f),
@@ -151,12 +155,12 @@ edaf80::Assignment2::run()
 		glm::vec3(-2.0f, -1.2f, -2.0f),
 		glm::vec3(-1.0f, -1.8f, -1.0f)
 	};
-	std::array<Node, control_point_locations.size()> control_points;
-	for (std::size_t i = 0; i < control_point_locations.size(); ++i) {
-		auto& control_point = control_points[i];
+	std::array<Node, control_points.size()> control_point_nodes;
+	for (std::size_t i = 0; i < control_points.size(); ++i) {
+		auto& control_point = control_point_nodes[i];
 		control_point.set_geometry(control_point_sphere);
 		control_point.set_program(&diffuse_shader, set_uniforms);
-		control_point.get_transform().SetTranslate(control_point_locations[i]);
+		control_point.get_transform().SetTranslate(control_points[i]);
 	}
 
 
@@ -191,7 +195,7 @@ edaf80::Assignment2::run()
 			show_logs = !show_logs;
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
 			show_gui = !show_gui;
-		if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
+		if (inputHandler.GetKeycodeState(GLFW_KEY_F1) & JUST_RELEASED)
 			mWindowManager.ToggleFullscreenStatusForWindow(window);
 
 
@@ -212,25 +216,37 @@ edaf80::Assignment2::run()
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		bonobo::changePolygonMode(polygon_mode);
 
-
 		if (interpolate) {
-			//! \todo Interpolate the movement of a shape between various
-			//!        control points.
+			int n = control_points.size();
+			
+			float s = fmod(elapsed_time_s, n);
+			int i0 = std::floor(s);
+			float x = s - std::floor(s);
+
 			if (use_linear) {
-				//! \todo Compute the interpolated position
-				//!       using the linear interpolation.
-			}
-			else {
-				//! \todo Compute the interpolated position
-				//!       using the Catmull-Rom interpolation;
-				//!       use the `catmull_rom_tension`
-				//!       variable as your tension argument.
+				int i1 = (i0 + 1) % n;
+				auto p = interpolation::evalLERP(control_points[i0],
+					                             control_points[i1],
+					                             x);
+				the_node_transform_ref.SetTranslate(p);
+			} else {
+				int i1      = (i0 + 1    ) % n;
+				int i2      = (i0 + 2    ) % n;
+				int i_minus = (i0 - 1 + n) % n;
+
+				auto p = interpolation::evalCatmullRom(control_points[i_minus],
+					                                   control_points[i0],
+					                                   control_points[i1],
+					                                   control_points[i2],
+					                                   catmull_rom_tension,
+					                                   x);
+				the_node_transform_ref.SetTranslate(p);
 			}
 		}
 
-		circle_rings.render(mCamera.GetWorldToClipMatrix());
+		the_node.render(mCamera.GetWorldToClipMatrix());
 		if (show_control_points) {
-			for (auto const& control_point : control_points) {
+			for (auto const& control_point : control_point_nodes) {
 				control_point.render(mCamera.GetWorldToClipMatrix());
 			}
 		}
@@ -244,7 +260,7 @@ edaf80::Assignment2::run()
 			bonobo::uiSelectPolygonMode("Polygon mode", polygon_mode);
 			auto selection_result = program_manager.SelectProgram("Shader", program_index);
 			if (selection_result.was_selection_changed) {
-				circle_rings.set_program(selection_result.program, set_uniforms);
+				the_node.set_program(selection_result.program, set_uniforms);
 			}
 			ImGui::Separator();
 			ImGui::Checkbox("Show control points", &show_control_points);
