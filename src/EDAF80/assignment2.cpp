@@ -43,9 +43,9 @@ void
 edaf80::Assignment2::run()
 {
 	// Load the sphere geometry
-	// auto const shape = parametric_shapes::createSphere(0.15f, 10u, 10u);
+	auto const shape = parametric_shapes::createSphere(0.15f, 10u, 10u);
 	// auto const shape = parametric_shapes::createSphere(0.15f, 3u, 3u);
-	auto const shape = parametric_shapes::createCircleRing(1.0f, 0.75f, 40u, 4u);
+	// auto const shape = parametric_shapes::createCircleRing(1.0f, 0.75f, 40u, 4u);
 	// auto const shape = parametric_shapes::createQuad(0.25, 0.15);
 	if (shape.vao == 0u)
 		return;
@@ -218,7 +218,7 @@ edaf80::Assignment2::run()
 
 		if (interpolate) {
 			int n = control_points.size();
-			
+
 			float s = fmod(elapsed_time_s, n);
 			int i0 = std::floor(s);
 			float x = s - std::floor(s);

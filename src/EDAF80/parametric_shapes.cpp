@@ -163,18 +163,19 @@ parametric_shapes::createSphere(float const radius,
 			// 	                      -radius * sin_theta * sin_phi);
 
 			// TODO(Erik): Why no sin_phi?
-			auto tangent =  glm::vec3( radius * cos_theta,
+			auto tangent =  glm::vec3( cos_theta,
 				                       0.0,
-				                      -radius * sin_theta);
+				                      -sin_theta);
 
-			auto binormal = glm::vec3( radius * sin_theta * cos_phi,
-				                       radius * sin_phi,
-				                       radius * cos_theta * cos_phi);
+			auto binormal = glm::vec3( sin_theta * cos_phi,
+				                       sin_phi,
+				                       cos_theta * cos_phi);
 
-			auto normal = glm::normalize(glm::cross(tangent, binormal));
+			auto normal = glm::cross(tangent, binormal);
 
+			auto uv = glm::vec3(theta / glm::two_pi<float>(), phi / glm::pi<float>(), 0.0);
 
-
+			texcoords[index] = uv;
 			positions[index] = position;
 			tangents [index] = tangent;
 			binormals[index] = binormal;

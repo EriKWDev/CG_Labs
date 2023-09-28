@@ -83,19 +83,58 @@ edaf80::Assignment3::run()
 	if (texcoord_shader == 0u)
 		LogError("Failed to load texcoord shader");
 
+	GLuint erik_phong_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Erik Phong",
+	                                         { { ShaderType::vertex, "EDAF80/erik_phong.vert" },
+	                                           { ShaderType::fragment, "EDAF80/erik_phong.frag" } },
+	                                         erik_phong_shader);
+	if (erik_phong_shader == 0u)
+		LogError("Failed to load erik_phong shader");
+
+	GLuint erik_cubemap_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Erik Cubemap",
+	                                         { { ShaderType::vertex, "EDAF80/erik_cubemap.vert" },
+	                                           { ShaderType::fragment, "EDAF80/erik_cubemap.frag" } },
+	                                          erik_cubemap_shader);
+	if (erik_cubemap_shader == 0u)
+		LogError("Failed to load erik_cubemap shader");
+
+	GLuint erik_skybox_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Erik Skybox",
+	                                         { { ShaderType::vertex, "EDAF80/erik_skybox.vert" },
+	                                           { ShaderType::fragment, "EDAF80/erik_skybox.frag" } },
+	                                          erik_skybox_shader);
+	if (erik_skybox_shader == 0u)
+		LogError("Failed to load erik_skybox shader");
+
 	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
 	auto const set_uniforms = [&light_position](GLuint program){
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 	};
 
-	bool use_normal_mapping = false;
+	bool use_normal_mapping = true;
 	auto camera_position = mCamera.mWorld.GetTranslation();
-	auto const phong_set_uniforms = [&use_normal_mapping,&light_position,&camera_position](GLuint program){
+	auto const phong_set_uniforms = [&use_normal_mapping, &light_position, &camera_position](GLuint program){
 		glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
 	};
 
+	GLuint cubemap = bonobo::loadTextureCubeMap(
+		config::resources_path("cubemaps/NissiBeach2/posx.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negx.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posy.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negy.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posz.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negz.jpg"));
+
+	// GLuint normal_map = bonobo::loadTexture2D(config::resources_path("textures/cobblestone_floor_08_nor_2k.jpg"));
+	// GLuint diffuse_map = bonobo::loadTexture2D(config::resources_path("textures/cobblestone_floor_08_diff_2k.jpg"));
+	// GLuint rough_map = bonobo::loadTexture2D(config::resources_path("textures/cobblestone_floor_08_rough_2k.jpg"));
+
+	GLuint normal_map = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_nor_2k.jpg"));
+	GLuint diffuse_map = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_coll1_2k.jpg"));
+	GLuint rough_map = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_rough_2k.jpg"));
 
 	//
 	// Set up the two spheres used.
@@ -108,7 +147,8 @@ edaf80::Assignment3::run()
 
 	Node skybox;
 	skybox.set_geometry(skybox_shape);
-	skybox.set_program(&fallback_shader, set_uniforms);
+	skybox.set_program(&erik_cubemap_shader, set_uniforms);
+	skybox.add_texture("skybox", cubemap, GL_TEXTURE_CUBE_MAP);
 
 	auto demo_shape = parametric_shapes::createSphere(1.5f, 40u, 40u);
 	if (demo_shape.vao == 0u) {
@@ -125,8 +165,12 @@ edaf80::Assignment3::run()
 	Node demo_sphere;
 	demo_sphere.set_geometry(demo_shape);
 	demo_sphere.set_material_constants(demo_material);
-	demo_sphere.set_program(&fallback_shader, phong_set_uniforms);
+	demo_sphere.set_program(&erik_phong_shader, phong_set_uniforms);
 
+	demo_sphere.add_texture("cubemap", cubemap, GL_TEXTURE_CUBE_MAP);
+	demo_sphere.add_texture("normal_map", normal_map, GL_TEXTURE_2D);
+	demo_sphere.add_texture("diffuse_map", diffuse_map, GL_TEXTURE_2D);
+	demo_sphere.add_texture("rough_map", rough_map, GL_TEXTURE_2D);
 
 	glClearDepthf(1.0f);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
