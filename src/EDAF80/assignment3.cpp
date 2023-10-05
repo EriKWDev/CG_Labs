@@ -108,12 +108,13 @@ edaf80::Assignment3::run()
 		LogError("Failed to load erik_skybox shader");
 
 	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
-	auto const set_uniforms = [&light_position](GLuint program){
+	auto camera_position = mCamera.mWorld.GetTranslation();
+	auto const set_uniforms = [&light_position, &camera_position](GLuint program){
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
 	};
 
 	bool use_normal_mapping = true;
-	auto camera_position = mCamera.mWorld.GetTranslation();
 	auto const phong_set_uniforms = [&use_normal_mapping, &light_position, &camera_position](GLuint program){
 		glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
@@ -128,13 +129,13 @@ edaf80::Assignment3::run()
 		config::resources_path("cubemaps/NissiBeach2/posz.jpg"),
 		config::resources_path("cubemaps/NissiBeach2/negz.jpg"));
 
-	// GLuint normal_map = bonobo::loadTexture2D(config::resources_path("textures/cobblestone_floor_08_nor_2k.jpg"));
-	// GLuint diffuse_map = bonobo::loadTexture2D(config::resources_path("textures/cobblestone_floor_08_diff_2k.jpg"));
-	// GLuint rough_map = bonobo::loadTexture2D(config::resources_path("textures/cobblestone_floor_08_rough_2k.jpg"));
+	GLuint normal_map = bonobo::loadTexture2D(config::resources_path("textures/cobblestone_floor_08_nor_2k.jpg"));
+	GLuint diffuse_map = bonobo::loadTexture2D(config::resources_path("textures/cobblestone_floor_08_diff_2k.jpg"));
+	GLuint rough_map = bonobo::loadTexture2D(config::resources_path("textures/cobblestone_floor_08_rough_2k.jpg"));
 
-	GLuint normal_map = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_nor_2k.jpg"));
-	GLuint diffuse_map = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_coll1_2k.jpg"));
-	GLuint rough_map = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_rough_2k.jpg"));
+	// GLuint normal_map = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_nor_2k.jpg"));
+	// GLuint diffuse_map = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_coll1_2k.jpg"));
+	// GLuint rough_map = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_rough_2k.jpg"));
 
 	//
 	// Set up the two spheres used.
@@ -147,7 +148,7 @@ edaf80::Assignment3::run()
 
 	Node skybox;
 	skybox.set_geometry(skybox_shape);
-	skybox.set_program(&erik_cubemap_shader, set_uniforms);
+	skybox.set_program(&erik_skybox_shader, set_uniforms);
 	skybox.add_texture("skybox", cubemap, GL_TEXTURE_CUBE_MAP);
 
 	auto demo_shape = parametric_shapes::createSphere(1.5f, 40u, 40u);

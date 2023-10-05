@@ -4,6 +4,10 @@
 
 namespace parametric_shapes
 {
+	bonobo::mesh_data createQuadTess(float const width, float const height,
+	                             unsigned int const horizontal_split_count = 0u,
+	                             unsigned int const vertical_split_count = 0u);
+	
 	//! \brief Create a quad a given tesselation level and make it
 	//!        available to OpenGL.
 	//!

@@ -62,12 +62,74 @@ edaf80::Assignment4::run()
 	// Todo: Insert the creation of other shader programs.
 	//       (Check how it was done in assignment 3.)
 	//
+	GLuint erik_water_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Erik Water",
+	                                         { { ShaderType::vertex, "EDAF80/erik_water.vert" },
+	                                           { ShaderType::fragment, "EDAF80/erik_water.frag" } },
+	                                         erik_water_shader);
+	if (erik_water_shader == 0u) {
+		LogError("Failed to load erik_water shader");
+		return;
+	}
+	GLuint erik_skybox_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Erik Skybox",
+	                                         { { ShaderType::vertex, "EDAF80/erik_skybox.vert" },
+	                                           { ShaderType::fragment, "EDAF80/erik_skybox.frag" } },
+	                                          erik_skybox_shader);
+	if (erik_skybox_shader == 0u)
+		LogError("Failed to load erik_skybox shader");
 
 	float elapsed_time_s = 0.0f;
+	GLuint cubemap = bonobo::loadTextureCubeMap(
+		config::resources_path("cubemaps/NissiBeach2/posx.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negx.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posy.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negy.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posz.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negz.jpg"));
+
+	GLuint normal_map = bonobo::loadTexture2D(config::resources_path("textures/waves.png"));
 
 	//
 	// Todo: Load your geometry
 	//
+
+	auto const shape = parametric_shapes::createQuadTess(100.0, 100.0, 200, 200);
+	if (shape.vao == 0u)
+		return;
+
+	auto skybox_shape = parametric_shapes::createSphere(420.0f, 100u, 100u);
+	if (skybox_shape.vao == 0u) {
+		LogError("Failed to retrieve the mesh for the skybox");
+		return;
+	}
+
+	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
+	auto const set_skybox_uniforms = [&light_position, &camera_position](GLuint program){
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+	};
+	Node skybox;
+	skybox.set_geometry(skybox_shape);
+	skybox.set_program(&erik_skybox_shader, set_skybox_uniforms);
+	skybox.add_texture("skybox", cubemap, GL_TEXTURE_CUBE_MAP);
+
+	auto ambient = glm::vec3(0.0f, 0.0f, 0.1f);
+	auto diffuse = glm::vec3(0.0f, 0.5f, 0.5f);
+	auto use_normal_mapping = true;
+	auto const set_uniforms = [&use_normal_mapping, &light_position, &elapsed_time_s, &camera_position, &ambient, &diffuse](GLuint program) {
+		glUniform1f(glGetUniformLocation(program, "t"), elapsed_time_s);
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+		glUniform3fv(glGetUniformLocation(program, "ambient"), 1, glm::value_ptr(ambient));
+		glUniform3fv(glGetUniformLocation(program, "diffuse"), 1, glm::value_ptr(diffuse));
+		glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
+	};
+	auto the_node = Node();
+	the_node.set_geometry(shape);
+	the_node.set_program(&erik_water_shader, set_uniforms);
+	the_node.add_texture("normal_map", normal_map, GL_TEXTURE_2D);
+	the_node.add_texture("sky_box", cubemap, GL_TEXTURE_CUBE_MAP);
 
 	glClearDepthf(1.0f);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -76,7 +138,7 @@ edaf80::Assignment4::run()
 
 	auto lastTime = std::chrono::high_resolution_clock::now();
 
-	bool pause_animation = true;
+	bool pause_animation = false;
 	bool use_orbit_camera = false;
 	auto cull_mode = bonobo::cull_mode_t::disabled;
 	auto polygon_mode = bonobo::polygon_mode_t::fill;
@@ -150,6 +212,8 @@ edaf80::Assignment4::run()
 			//
 			// Todo: Render all your geometry here.
 			//
+			skybox.render(mCamera.GetWorldToClipMatrix());
+			the_node.render(mCamera.GetWorldToClipMatrix());
 		}
 
 
@@ -175,6 +239,12 @@ edaf80::Assignment4::run()
 			ImGui::Checkbox("Show basis", &show_basis);
 			ImGui::SliderFloat("Basis thickness scale", &basis_thickness_scale, 0.0f, 100.0f);
 			ImGui::SliderFloat("Basis length scale", &basis_length_scale, 0.0f, 100.0f);
+
+
+			ImGui::Separator();
+			ImGui::ColorEdit3("Ambient", glm::value_ptr(ambient));
+			ImGui::ColorEdit3("Diffuse", glm::value_ptr(diffuse));
+			ImGui::Checkbox("Use normal mapping", &use_normal_mapping);
 		}
 		ImGui::End();
 
