@@ -49,7 +49,7 @@ void main()
 							 + texture(normal_map, fs_in.coord1) * 2 - 1
 							 + texture(normal_map, fs_in.coord2) * 2 - 1));
 
-		N = normalize((normal_model_to_world * vec4(tbn_norm * bump.xyz, 1.0)).xyz);	
+		N = normalize((normal_model_to_world * vec4(tbn_norm * bump.xyz, 1.0)).xyz);
 	}
 
 	float facing = 1.0 - max(dot(V, N), 0.0);
@@ -80,5 +80,7 @@ void main()
 	// frag_color = vec4(R, 1.0);
 
 	// frag_color = vec4(V, 1.0);
-	frag_color = vec4(camera_position, 1.0);
+	// frag_color = vec4(camera_position, 1.0);
+	// frag_color = vec4(N, 1.0);
+	// frag_color = vec4(vec3(fs_in.coord0, 0.0), 1.0);
 }

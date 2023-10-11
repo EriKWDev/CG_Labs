@@ -135,7 +135,6 @@ edaf80::Assignment4::run()
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
 
-
 	auto lastTime = std::chrono::high_resolution_clock::now();
 
 	bool pause_animation = false;

@@ -38,7 +38,6 @@ parametric_shapes::createQuadTess(float const width, float const height,
 
 			float tu = (float)h / (float)(horizontal_split_count);
 			float tv = (float)v / (float)(vertical_split_count);
-
 			texcoords[index] = glm::vec3(tu, tv, 0.0);
 
 			index++;
