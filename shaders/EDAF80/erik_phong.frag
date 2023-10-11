@@ -40,8 +40,8 @@ void main() {
 
 		mat3 TBN = mat3(tangent_norm, binormal_norm, normal_norm);
 
-		vec3 n = texture(normal_map, fs_in.texture_coord.xy).xyz;
-		n = normalize(n * 2.0 - 1.0);
+		vec3 n = texture(normal_map, fs_in.texture_coord.xy).xyz * 2.0 - 1.0;  
+		n = normalize(n);
 		N = (normal_model_to_world * vec4(TBN * n, 1.0)).xyz;
 	}
 
