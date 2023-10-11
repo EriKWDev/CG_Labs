@@ -364,8 +364,9 @@ edaf80::Assignment5::run()
 
 			auto p = glm::vec3(cos(t), 0.0, sin(t)) * r;
 			auto target_pos = origin + p + glm::vec3(0.0, y, 0.0);
-	        the_node.get_transform().SetTranslate(target_pos);
+      the_node.get_transform().SetTranslate(target_pos);
 					// the_node.get_transform().SetRotate();
+			the_node.get_transform().SetRotateY(-t);
 
 			sphere_t target_sphere = sphere_t {
 				.radius = 5.0f,
@@ -386,7 +387,7 @@ edaf80::Assignment5::run()
 			Targets_speed.erase(Targets_speed.begin() + i);
 		}
 
-		// mCamera.mWorld.SetTranslate(glm::vec3(0.0, 30.0, 0.0));
+		mCamera.mWorld.SetTranslate(glm::vec3(0.0, 5.0, 0.0));
 
 		camera_position = mCamera.mWorld.GetTranslation();
 
