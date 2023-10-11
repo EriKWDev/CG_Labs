@@ -134,7 +134,7 @@ edaf80::Assignment5::run()
 	// auto const sponza_geometry = bonobo::loadObjects(config::resources_path("sponza/sponza.obj"));
 	auto sp_1= bonobo::loadObjects(config::resources_path("spacecrafts/nave_low_poly/source/nave_low_poly.obj"));
 	// auto sp_2= bonobo::loadObjects(config::resources_path("/spacecrafts/cone/source/Spacecraft2.obj"));
-	// auto& sp_1_ref = sp_1[0];
+	auto& sp_1_ref = sp_1[0];
 	// auto& sp_2_ref = sp_2[0];
 	// auto const sp_3= bonobo::loadObjects(config::resources_path("spacecrafts/nave_low_poly/source/nave_low_poly.obj");
 	// auto const sp_4= bonobo::loadObjects(config::resources_path("spacecrafts/nave_low_poly/source/nave_low_poly.obj");
@@ -240,7 +240,7 @@ edaf80::Assignment5::run()
 			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
 		};
 		
-        the_node.set_geometry(sphere);
+    the_node.set_geometry(sp_1_ref);
 		the_node.set_program(&erik_phong_shader, phong_set_uniforms);
 		the_node.add_texture("cubemap", cubemap, GL_TEXTURE_CUBE_MAP);
 		the_node.add_texture("normal_map", normal_map, GL_TEXTURE_2D);
@@ -321,7 +321,7 @@ edaf80::Assignment5::run()
 
 			ship_velocity.x += movement.x;
 			ship_velocity.y += movement.y;
-			speed = std::clamp(speed, 0.2f, 2.0f);
+			speed = glm::clamp(speed, 0.2f, 2.0f);
 		}
 
 		ship_velocity *= 0.98;
@@ -365,6 +365,7 @@ edaf80::Assignment5::run()
 			auto p = glm::vec3(cos(t), 0.0, sin(t)) * r;
 			auto target_pos = origin + p + glm::vec3(0.0, y, 0.0);
 	        the_node.get_transform().SetTranslate(target_pos);
+					// the_node.get_transform().SetRotate();
 
 			sphere_t target_sphere = sphere_t {
 				.radius = 5.0f,
