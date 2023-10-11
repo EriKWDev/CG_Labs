@@ -415,8 +415,8 @@ parametric_shapes::createCircleRing(float const radius,
 		for (unsigned int j = 0u; j < spread_slice_vertices_count; ++j) {
 			// vertex
 			vertices[index] = glm::vec3(distance_to_centre * cos_theta,
-			                            distance_to_centre * sin_theta,
-			                            0.0f);
+										0.0f,
+			                            distance_to_centre * sin_theta);
 
 			// texture coordinates
 			texcoords[index] = glm::vec3(static_cast<float>(j) / (static_cast<float>(spread_slice_vertices_count)),
