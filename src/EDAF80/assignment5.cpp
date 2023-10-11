@@ -387,7 +387,7 @@ edaf80::Assignment5::run()
 			Targets_speed.erase(Targets_speed.begin() + i);
 		}
 
-		mCamera.mWorld.SetTranslate(glm::vec3(0.0, 5.0, 0.0));
+		mCamera.mWorld.SetTranslate(glm::vec3(0.0, 10.0, 0.0));
 
 		camera_position = mCamera.mWorld.GetTranslation();
 
