@@ -131,6 +131,13 @@ edaf80::Assignment5::run()
 	// GLuint normal_map = bonobo::loadTexture2D(config::resources_path("textures/lava_normal.png"));
 	// GLuint normal_map = bonobo::loadTexture2D(config::resources_path("textures/lava_normal2.png"));
 
+	// auto const sponza_geometry = bonobo::loadObjects(config::resources_path("sponza/sponza.obj"));
+	auto sp_1= bonobo::loadObjects(config::resources_path("spacecrafts/nave_low_poly/source/nave_low_poly.obj"));
+	// auto sp_2= bonobo::loadObjects(config::resources_path("/spacecrafts/cone/source/Spacecraft2.obj"));
+	// auto& sp_1_ref = sp_1[0];
+	// auto& sp_2_ref = sp_2[0];
+	// auto const sp_3= bonobo::loadObjects(config::resources_path("spacecrafts/nave_low_poly/source/nave_low_poly.obj");
+	// auto const sp_4= bonobo::loadObjects(config::resources_path("spacecrafts/nave_low_poly/source/nave_low_poly.obj");
 
 	//
 	// Todo: Load your geometry
@@ -201,6 +208,8 @@ edaf80::Assignment5::run()
 	
 	auto space_ship_node = Node();
 	space_ship_node.set_geometry(space_ship_mesh);
+	// auto& space_craft_mesh = sp_1[];
+	// space_ship_node.set_geometry(sp_2_ref);
 	space_ship_node.set_material_constants(demo_material);
 	space_ship_node.set_program(&erik_phong_shader, phong_set_uniforms);
 	space_ship_node.add_texture("cubemap", cubemap, GL_TEXTURE_CUBE_MAP);
@@ -318,8 +327,8 @@ edaf80::Assignment5::run()
 		ship_velocity *= 0.98;
 
 		ship_screen_pos += ship_velocity * dt * 20.0f;
-		ship_screen_pos.x = std::clamp(ship_screen_pos.x, 0.0f, 300.0f);
-		ship_screen_pos.y = std::clamp(ship_screen_pos.y, -10.0f, 30.0f);
+		ship_screen_pos.x = glm::clamp(ship_screen_pos.x, 0.0f, 300.0f);
+		ship_screen_pos.y = glm::clamp(ship_screen_pos.y, -10.0f, 30.0f);
 
 		t += speed * dt;
 		auto dir = glm::vec3(cos(t), 0.0, sin(t));
