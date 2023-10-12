@@ -148,10 +148,10 @@ edaf80::Assignment5::run()
 	// auto const shape = parametric_shapes::createQuadTess(100.0, 100.0, 500, 500);
 
 
-	float outRad = 5000.0;
-	float inRad = 2000.0;
+	float outRad = 2700.0;
+	float inRad = 2400.0;
 	
-	auto const water_shape = parametric_shapes::createCircleRing((outRad + inRad) / 2.0, (outRad - inRad) , 100, 100);
+	auto const water_shape = parametric_shapes::createCircleRing((outRad + inRad) / 2.0, (outRad - inRad), 100, 10);
 	if (water_shape.vao == 0u)
 		return;
 
@@ -160,7 +160,7 @@ edaf80::Assignment5::run()
 		return;
 	
 
-	auto const player_mesh = parametric_shapes::createSphere(1.0, 10, 10);
+	auto const player_mesh = parametric_shapes::createSphere(0.6, 10, 10);
 	if (player_mesh.vao == 0u)
 		return;
 
@@ -238,15 +238,15 @@ edaf80::Assignment5::run()
         int rand_val = rand();
         double boundary = coordSpace / 15.0;
         float x_plane = ((rand_val / (RAND_MAX * 1.0f)) * boundary) + inRad; // random x-value from 0 to 4.5 (outer radius - inner radius)
-        float x_coord = outRad;
+        float x_coord = x_plane + (boundary * i);
 
-		auto const phong_set_uniforms = [&use_normal_mapping, &light_position, &camera_position](GLuint program){
+		auto const phong_set_uniforms = [i, &use_normal_mapping, &light_position, &camera_position](GLuint program){
 			glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
 			glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
-			glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec3(1.0, 0.2, 0.2)));
+			glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec3(1.0, 1.0, 1.0)));
 		};
-
+		
 		auto the_node = Node();
 		the_node.set_geometry(sp_1_ref);
 		the_node.set_program(&erik_phong_shader, phong_set_uniforms);
@@ -267,8 +267,8 @@ edaf80::Assignment5::run()
 		Targets_t.push_back(t);
 
         rand_val = rand();
-        float speed = ((rand_val / (RAND_MAX * 1.0f)) * 0.4);
-		Targets_speed.push_back(t);
+        float speed = ((rand_val / (RAND_MAX * 1.0f)) * 0.5);
+		Targets_speed.push_back(speed );
     }
 
 	glClearDepthf(1.0f);
@@ -333,7 +333,7 @@ edaf80::Assignment5::run()
 
 			player_velocity.x += movement.x * 0.5;
 			player_velocity.y += movement.y * 0.1;
-			speed = glm::clamp(speed, 0.001f, 0.1f);
+			speed = glm::clamp(speed, 0.001f, 4.3f);
 		}
 
 		player_velocity *= 0.95;
@@ -342,7 +342,7 @@ edaf80::Assignment5::run()
 
 		player_screen_pos += player_velocity * dt * 30.0f;
 		player_screen_pos.x = glm::clamp(player_screen_pos.x, inRad, outRad);
-		player_screen_pos.y = glm::clamp(player_screen_pos.y, -10.0f, 30.0f);
+		player_screen_pos.y = glm::clamp(player_screen_pos.y, 2.0f, 40.0f);
 
 		t += speed * dt;
 		auto dir = glm::vec3(cos(t), 0.0, sin(t));
@@ -373,7 +373,7 @@ edaf80::Assignment5::run()
 
 
 		sphere_t player_sphere = sphere_t {
-			.radius = 3.0f,
+			.radius = 5.0f,
 			.point = new_ship_pos,
 		};
 
@@ -389,14 +389,22 @@ edaf80::Assignment5::run()
 			float y = Targets_y[i];
 
 			auto p = glm::vec3(cos(t), 0.0, sin(t)) * r;
-			auto target_node = origin + p + glm::vec3(0.0, y, 0.0);
-		    the_node.get_transform().SetTranslate(target_node);
-			the_node.get_transform().SetScale(glm::vec3(1.0, 1.0, 1.0) * 2.0f);
+			auto target_node_pos = origin + p + glm::vec3(0.0, y, 0.0);
+		    the_node.get_transform().SetTranslate(target_node_pos);
+			the_node.get_transform().SetScale(11.0f);
 			the_node.get_transform().SetRotateY(-t);
+	
+			auto const phong_set_uniforms = [i, &use_normal_mapping, &light_position, &camera_position](GLuint program){
+				glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
+				glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+				glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+				glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec3(1.0, 1.0, 1.0)));
+			};
+			the_node.set_program(&erik_phong_shader, phong_set_uniforms);
 
 			sphere_t target_sphere = sphere_t {
 				.radius = 5.0f,
-				.point = target_node,
+				.point = target_node_pos,
 			};
 
 			if (sphere_v_sphere(player_sphere, target_sphere)) {

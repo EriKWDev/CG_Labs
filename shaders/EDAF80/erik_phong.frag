@@ -49,7 +49,7 @@ void main() {
 
 	vec3 diffuse_sample_colour = texture(diffuse_map, fs_in.texture_coord.xy).rgb;
 	float rough_sample = texture(rough_map, fs_in.texture_coord.xy).r;
-	vec3 diff_color = mix(diffuse_sample_colour, color, 0.8) * diffuse_colour;
+	vec3 diff_color = color * diffuse_sample_colour;
 
 	/*
 		NOTE: Phong
