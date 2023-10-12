@@ -148,10 +148,10 @@ edaf80::Assignment5::run()
 	// auto const shape = parametric_shapes::createQuadTess(100.0, 100.0, 500, 500);
 
 
-	float outRad = 930.0;
-	float inRad = 800.0;
+	float outRad = 5000.0;
+	float inRad = 2000.0;
 	
-	auto const water_shape = parametric_shapes::createCircleRing((outRad + inRad) / 2.0, (outRad - inRad) / 2.0, 100, 10);
+	auto const water_shape = parametric_shapes::createCircleRing((outRad + inRad) / 2.0, (outRad - inRad) , 100, 100);
 	if (water_shape.vao == 0u)
 		return;
 
@@ -238,7 +238,7 @@ edaf80::Assignment5::run()
         int rand_val = rand();
         double boundary = coordSpace / 15.0;
         float x_plane = ((rand_val / (RAND_MAX * 1.0f)) * boundary) + inRad; // random x-value from 0 to 4.5 (outer radius - inner radius)
-        float x_coord = x_plane + (boundary * i);
+        float x_coord = outRad;
 
 		auto const phong_set_uniforms = [&use_normal_mapping, &light_position, &camera_position](GLuint program){
 			glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
@@ -346,7 +346,7 @@ edaf80::Assignment5::run()
 
 		t += speed * dt;
 		auto dir = glm::vec3(cos(t), 0.0, sin(t));
-		auto p = origin + dir * radius + glm::vec3(0.0, 20.0, 0.0);
+		auto p = origin + glm::vec3(0.0, 10.0, 0.0);
 		glm::vec3 new_ship_pos = p + dir * player_screen_pos.x + glm::vec3(0.0f, player_screen_pos.y, 0.0f);
 
 		float t = dt * 5.0;
@@ -354,7 +354,9 @@ edaf80::Assignment5::run()
 		new_player_look_pos = new_ship_pos;
 
 		auto dir2 = -glm::cross(glm::vec3(0.0, 1.0, 0.0), (-dir));
-		dir2.y += 0.2;
+		dir2 = dir2 + 0.3f *dir;
+		dir2 = glm::normalize(dir2);
+		dir2.y += 0.;
 		dir2 = glm::normalize(dir2);
 
 		mCamera.mWorld.SetTranslate(
