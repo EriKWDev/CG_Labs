@@ -333,12 +333,12 @@ edaf80::Assignment5::run()
 
 			player_velocity.x += movement.x * 0.5;
 			player_velocity.y += movement.y * 0.1;
-			speed = glm::clamp(speed, 0.2f, 20.0f);
+			speed = glm::clamp(speed, 0.001f, 0.1f);
 		}
 
 		player_velocity *= 0.95;
 
-		mCamera.SetProjection(0.7 + speed * 0.1, static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y), 4.0, 10'000.0);
+		mCamera.SetProjection(0.7 + speed * 0.1, static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y), 0.1, 10'000.0);
 
 		player_screen_pos += player_velocity * dt * 30.0f;
 		player_screen_pos.x = glm::clamp(player_screen_pos.x, inRad, outRad);
@@ -351,19 +351,19 @@ edaf80::Assignment5::run()
 
 		float t = dt * 5.0;
 		// new_ship_look_pos = new_ship_look_pos * (1.0f - t) + new_ship_pos * t;
-		new_player_look_pos = new_ship_pos;
+		new_player_look_pos = new_ship_pos + glm::vec3(0.0,0.4,0.0);
 
 		auto dir2 = -glm::cross(glm::vec3(0.0, 1.0, 0.0), (-dir));
 		dir2 = dir2 + 0.3f *dir;
 		dir2 = glm::normalize(dir2);
-		dir2.y += 0.;
+		dir2.y += 0.2f;
 		dir2 = glm::normalize(dir2);
 
 		mCamera.mWorld.SetTranslate(
 			p
 				+ dir2 * 7.0f
 				+ dir * player_screen_pos.x * 1.0f
-			    + glm::vec3(0.0, 1.0, 0.0) * (player_screen_pos.y * 0.9f)
+			    + glm::vec3(0.0, 1.0, 0.0) * (player_screen_pos.y * 1.0f)
 		);
 		mCamera.mWorld.LookAt(new_player_look_pos);
 
