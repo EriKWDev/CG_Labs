@@ -33,9 +33,8 @@ out VS_OUT {
 	vec2 coord2;
 } vs_out;
 
-void wave(vec3 vert, vec2 D, float A, float f, float p, float k,
-          out vec3 displacement, out mat3 tbn){
-	float alpha = sin((dot(D, vert.xz) * f) + (t * p)) * 0.5 + 0.5;
+void wave(vec3 vert, vec2 D, float A, float f, float p, float k, out vec3 displacement, out mat3 tbn){
+	float alpha = sin((dot(D, vert.xz) * f) + (t * p * 10.0)) * 0.5 + 0.5;
 
 	/*
 		NOTE: Calculate derivatives

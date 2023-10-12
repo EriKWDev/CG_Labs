@@ -21,7 +21,7 @@
 edaf80::Assignment5::Assignment5(WindowManager& windowManager) :
 	mCamera(0.5f * glm::half_pi<float>(),
 	        static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y),
-	        0.01f, 1000.0f),
+	        0.01f, 4000.0f),
 	inputHandler(), mWindowManager(windowManager), window(nullptr)
 {
 	WindowManager::WindowDatum window_datum{ inputHandler, mCamera, config::resolution_x, config::resolution_y, 0, 0, 0, 0};
@@ -146,8 +146,13 @@ edaf80::Assignment5::run()
 	//
 
 	// auto const shape = parametric_shapes::createQuadTess(100.0, 100.0, 500, 500);
-	auto const shape = parametric_shapes::createCircleRing(130.0, 200.0, 100, 10);
-	if (shape.vao == 0u)
+
+
+	float outRad = 930.0;
+	float inRad = 800.0;
+	
+	auto const water_shape = parametric_shapes::createCircleRing((outRad + inRad) / 2.0, (outRad - inRad) / 2.0, 100, 10);
+	if (water_shape.vao == 0u)
 		return;
 
 	auto const sphere = parametric_shapes::createSphere(5.0, 10, 10);
@@ -155,8 +160,8 @@ edaf80::Assignment5::run()
 		return;
 	
 
-	auto const space_ship_mesh = parametric_shapes::createSphere(6.0, 10, 10);
-	if (space_ship_mesh.vao == 0u)
+	auto const player_mesh = parametric_shapes::createSphere(1.0, 10, 10);
+	if (player_mesh.vao == 0u)
 		return;
 
 	auto skybox_shape = parametric_shapes::createSphere(420.0f, 100u, 100u);
@@ -196,7 +201,7 @@ edaf80::Assignment5::run()
 	};
 	
 	auto water_node = Node();
-	water_node.set_geometry(shape);
+	water_node.set_geometry(water_shape);
 	water_node.set_program(&erik_water_shader, set_uniforms);
 	water_node.add_texture("normal_map", normal_map, GL_TEXTURE_2D);
 	water_node.add_texture("sky_box", cubemap, GL_TEXTURE_CUBE_MAP);
@@ -209,16 +214,16 @@ edaf80::Assignment5::run()
 	demo_material.specular = glm::vec3(1.0f, 1.0f, 1.0f);
 	demo_material.shininess = 10.0f;
 	
-	auto space_ship_node = Node();
-	space_ship_node.set_geometry(space_ship_mesh);
+	auto player_node = Node();
+	player_node.set_geometry(player_mesh);
 	// auto& space_craft_mesh = sp_1[];
 	// space_ship_node.set_geometry(sp_2_ref);
-	space_ship_node.set_material_constants(demo_material);
-	space_ship_node.set_program(&erik_phong_shader, phong_set_uniforms);
-	space_ship_node.add_texture("cubemap", cubemap, GL_TEXTURE_CUBE_MAP);
-	space_ship_node.add_texture("normal_map", normal_map, GL_TEXTURE_2D);
-	space_ship_node.add_texture("diffuse_map", diffuse_map, GL_TEXTURE_2D);
-	space_ship_node.add_texture("rough_map", rough_map, GL_TEXTURE_2D);
+	player_node.set_material_constants(demo_material);
+	player_node.set_program(&erik_phong_shader, phong_set_uniforms);
+	player_node.add_texture("cubemap", cubemap, GL_TEXTURE_CUBE_MAP);
+	player_node.add_texture("normal_map", normal_map, GL_TEXTURE_2D);
+	player_node.add_texture("diffuse_map", diffuse_map, GL_TEXTURE_2D);
+	player_node.add_texture("rough_map", rough_map, GL_TEXTURE_2D);
 
 	std::vector<Node> Targets_node = std::vector<Node>();
     std::vector<float> Targets_rad = std::vector<float>();
@@ -226,13 +231,12 @@ edaf80::Assignment5::run()
     std::vector<float> Targets_y = std::vector<float>();
     std::vector<float> Targets_speed = std::vector<float>();
 
-	float outRad = 200.0;
-	float inRad = 130.0;
+
 	float coordSpace = outRad - inRad;
 
     for (unsigned int i = 0u; i < 15 ; ++i) {
         int rand_val = rand();
-        double boundary = 4.5;
+        double boundary = coordSpace / 15.0;
         float x_plane = ((rand_val / (RAND_MAX * 1.0f)) * boundary) + inRad; // random x-value from 0 to 4.5 (outer radius - inner radius)
         float x_coord = x_plane + (boundary * i);
 
@@ -285,17 +289,17 @@ edaf80::Assignment5::run()
 	float basis_length_scale = 1.0f;
 
 	glm::vec3 origin = glm::vec3(0.0f, 0.0f, 0.0f);
-	float radius = 80.0f;
-	float speed = 0.7f;
+	float radius = 0.0f;
+	float speed = 0.3f;
 	float t = 0.0;
 
 	int score = 0;
 
 	changeCullMode(cull_mode);
 
-	glm::vec2 ship_velocity = glm::vec2(0.0, 0.0);
-	glm::vec2 ship_screen_pos = glm::vec2(0.0, 0.0);
-	glm::vec3 new_ship_look_pos = glm::vec3(0.0, 0.0, 0.0);
+	glm::vec2 player_velocity = glm::vec2(0.0, 0.0);
+	glm::vec2 player_screen_pos = glm::vec2(0.0, 0.0);
+	glm::vec3 new_player_look_pos = glm::vec3(0.0, 0.0, 0.0);
 
 	bool game_done = false;
 
@@ -327,40 +331,43 @@ edaf80::Assignment5::run()
 			if ((inputHandler.GetKeycodeState(GLFW_KEY_W) & PRESSED)) speed += 0.1f;
 			if ((inputHandler.GetKeycodeState(GLFW_KEY_S) & PRESSED)) speed -= 0.1f;
 
-			ship_velocity.x += movement.x * 0.5;
-			ship_velocity.y += movement.y * 0.1;
+			player_velocity.x += movement.x * 0.5;
+			player_velocity.y += movement.y * 0.1;
 			speed = glm::clamp(speed, 0.2f, 20.0f);
 		}
 
-		ship_velocity *= 0.95;
+		player_velocity *= 0.95;
 
-		ship_screen_pos += ship_velocity * dt * 30.0f;
-		ship_screen_pos.x = glm::clamp(ship_screen_pos.x, 0.0f, 150.0f);
-		ship_screen_pos.y = glm::clamp(ship_screen_pos.y, -10.0f, 30.0f);
+		mCamera.SetProjection(0.7 + speed * 0.1, static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y), 4.0, 10'000.0);
+
+		player_screen_pos += player_velocity * dt * 30.0f;
+		player_screen_pos.x = glm::clamp(player_screen_pos.x, inRad, outRad);
+		player_screen_pos.y = glm::clamp(player_screen_pos.y, -10.0f, 30.0f);
 
 		t += speed * dt;
 		auto dir = glm::vec3(cos(t), 0.0, sin(t));
 		auto p = origin + dir * radius + glm::vec3(0.0, 20.0, 0.0);
-		glm::vec3 new_ship_pos = p + dir * ship_screen_pos.x + glm::vec3(0.0f, ship_screen_pos.y, 0.0f);
+		glm::vec3 new_ship_pos = p + dir * player_screen_pos.x + glm::vec3(0.0f, player_screen_pos.y, 0.0f);
 
 		float t = dt * 5.0;
 		// new_ship_look_pos = new_ship_look_pos * (1.0f - t) + new_ship_pos * t;
-		new_ship_look_pos = new_ship_pos;
+		new_player_look_pos = new_ship_pos;
 
 		auto dir2 = -glm::cross(glm::vec3(0.0, 1.0, 0.0), (-dir));
-		dir2.y += 0.3;
+		dir2.y += 0.2;
 		dir2 = glm::normalize(dir2);
 
 		mCamera.mWorld.SetTranslate(
 			p
-				+ dir2 * 50.0f
-				+ dir * ship_screen_pos.x * 1.0f
-			    + glm::vec3(0.0, 1.0, 0.0) * (ship_screen_pos.y * 0.8f)
+				+ dir2 * 7.0f
+				+ dir * player_screen_pos.x * 1.0f
+			    + glm::vec3(0.0, 1.0, 0.0) * (player_screen_pos.y * 0.9f)
 		);
-		mCamera.mWorld.LookAt(new_ship_look_pos);
+		mCamera.mWorld.LookAt(new_player_look_pos);
 
-		auto& ship_transform = space_ship_node.get_transform();
-		ship_transform.SetTranslate(new_ship_pos);
+		auto& player_transform = player_node.get_transform();
+		// player_transform.SetScale(0.0);
+		player_transform.SetTranslate(new_ship_pos);
 
 
 		sphere_t player_sphere = sphere_t {
@@ -380,14 +387,14 @@ edaf80::Assignment5::run()
 			float y = Targets_y[i];
 
 			auto p = glm::vec3(cos(t), 0.0, sin(t)) * r;
-			auto target_pos = origin + p + glm::vec3(0.0, y, 0.0);
-		    the_node.get_transform().SetTranslate(target_pos);
+			auto target_node = origin + p + glm::vec3(0.0, y, 0.0);
+		    the_node.get_transform().SetTranslate(target_node);
 			the_node.get_transform().SetScale(glm::vec3(1.0, 1.0, 1.0) * 2.0f);
 			the_node.get_transform().SetRotateY(-t);
 
 			sphere_t target_sphere = sphere_t {
 				.radius = 5.0f,
-				.point = target_pos,
+				.point = target_node,
 			};
 
 			if (sphere_v_sphere(player_sphere, target_sphere)) {
@@ -449,17 +456,23 @@ edaf80::Assignment5::run()
 		bonobo::changePolygonMode(polygon_mode);
 
 		if (!shader_reload_failed) {
+			auto vp = mCamera.GetWorldToClipMatrix();
+
 			//
 			// Todo: Render all your geometry here.
 			//
 			// mCamera.mWorld.SetTranslate(p);
-			auto vp = mCamera.GetWorldToClipMatrix();
+			glDisable(GL_DEPTH_TEST);
 			skybox.render(vp);
+			glEnable(GL_DEPTH_TEST);
+			
 			water_node.render(vp);
-			space_ship_node.render(vp);
+			player_node.render(vp);
+
 			for (int i = 0; i < Targets_node.size(); i++) {
 				Targets_node[i].render(vp);
 			}
+
 		}
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -471,7 +484,7 @@ edaf80::Assignment5::run()
 
 		bool opened = ImGui::Begin("Scene Control", nullptr, ImGuiWindowFlags_None | ImGuiWindowFlags_NoTitleBar);
 		if (opened) {
-			float s = (50.0f - elapsed_game_time_s);
+			float s = (100.0f - elapsed_game_time_s);
 			ImGui::DragInt(" Points", &score, 0.1f, 0, 999999999);
 			ImGui::DragFloat(" s", &s, 0.1f, 0, 99999999.0f);
 		}
