@@ -16,6 +16,8 @@ uniform sampler2D rough_map;
 
 uniform mat4 normal_model_to_world;
 
+uniform vec3 color;
+
 in VS_OUT {
 	vec3 vertex;
 	vec3 normal;
@@ -47,7 +49,7 @@ void main() {
 
 	vec3 diffuse_sample_colour = texture(diffuse_map, fs_in.texture_coord.xy).rgb;
 	float rough_sample = texture(rough_map, fs_in.texture_coord.xy).r;
-	vec3 diff_color = diffuse_sample_colour * diffuse_colour;
+	vec3 diff_color = mix(diffuse_sample_colour, color, 0.8) * diffuse_colour;
 
 	/*
 		NOTE: Phong

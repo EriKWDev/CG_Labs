@@ -108,6 +108,8 @@ edaf80::Assignment5::run()
 		LogError("Failed to load erik_skybox shader");
 
 	float elapsed_time_s = 0.0f;
+	float elapsed_game_time_s = 0.0f;
+
 	// GLuint cubemap = bonobo::loadTextureCubeMap(
 	// 	config::resources_path("cubemaps/light_blue_space/right.png"),
 	// 	config::resources_path("cubemaps/light_blue_space/left.png"),
@@ -153,7 +155,7 @@ edaf80::Assignment5::run()
 		return;
 	
 
-	auto const space_ship_mesh = parametric_shapes::createSphere(10.0, 10, 10);
+	auto const space_ship_mesh = parametric_shapes::createSphere(6.0, 10, 10);
 	if (space_ship_mesh.vao == 0u)
 		return;
 
@@ -190,6 +192,7 @@ edaf80::Assignment5::run()
 		glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+		glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec3(1.0, 1.0, 1.0)));
 	};
 	
 	auto water_node = Node();
@@ -232,21 +235,22 @@ edaf80::Assignment5::run()
         double boundary = 4.5;
         float x_plane = ((rand_val / (RAND_MAX * 1.0f)) * boundary) + inRad; // random x-value from 0 to 4.5 (outer radius - inner radius)
         float x_coord = x_plane + (boundary * i);
-        auto the_node = Node();
 
 		auto const phong_set_uniforms = [&use_normal_mapping, &light_position, &camera_position](GLuint program){
 			glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
 			glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+			glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec3(1.0, 0.2, 0.2)));
 		};
-		
-    the_node.set_geometry(sp_1_ref);
+
+		auto the_node = Node();
+		the_node.set_geometry(sp_1_ref);
 		the_node.set_program(&erik_phong_shader, phong_set_uniforms);
 		the_node.add_texture("cubemap", cubemap, GL_TEXTURE_CUBE_MAP);
 		the_node.add_texture("normal_map", normal_map, GL_TEXTURE_2D);
 		the_node.add_texture("diffuse_map", diffuse_map, GL_TEXTURE_2D);
 		the_node.add_texture("rough_map", rough_map, GL_TEXTURE_2D);
-    
+
         Targets_rad.push_back(x_coord);
         Targets_node.push_back(the_node);
 
@@ -293,12 +297,16 @@ edaf80::Assignment5::run()
 	glm::vec2 ship_screen_pos = glm::vec2(0.0, 0.0);
 	glm::vec3 new_ship_look_pos = glm::vec3(0.0, 0.0, 0.0);
 
+	bool game_done = false;
+
 	while (!glfwWindowShouldClose(window)) {
 		auto const nowTime = std::chrono::high_resolution_clock::now();
 		auto const deltaTimeUs = std::chrono::duration_cast<std::chrono::microseconds>(nowTime - lastTime);
 		lastTime = nowTime;
-		if (!pause_animation) {
-			elapsed_time_s += std::chrono::duration<float>(deltaTimeUs).count();
+
+		elapsed_time_s += std::chrono::duration<float>(deltaTimeUs).count();
+		if (!game_done) {
+			elapsed_game_time_s += std::chrono::duration<float>(deltaTimeUs).count();
 		}
 
 		auto& io = ImGui::GetIO();
@@ -319,15 +327,15 @@ edaf80::Assignment5::run()
 			if ((inputHandler.GetKeycodeState(GLFW_KEY_W) & PRESSED)) speed += 0.1f;
 			if ((inputHandler.GetKeycodeState(GLFW_KEY_S) & PRESSED)) speed -= 0.1f;
 
-			ship_velocity.x += movement.x;
-			ship_velocity.y += movement.y;
-			speed = glm::clamp(speed, 0.2f, 2.0f);
+			ship_velocity.x += movement.x * 0.5;
+			ship_velocity.y += movement.y * 0.1;
+			speed = glm::clamp(speed, 0.2f, 20.0f);
 		}
 
-		ship_velocity *= 0.98;
+		ship_velocity *= 0.95;
 
-		ship_screen_pos += ship_velocity * dt * 20.0f;
-		ship_screen_pos.x = glm::clamp(ship_screen_pos.x, 0.0f, 300.0f);
+		ship_screen_pos += ship_velocity * dt * 30.0f;
+		ship_screen_pos.x = glm::clamp(ship_screen_pos.x, 0.0f, 150.0f);
 		ship_screen_pos.y = glm::clamp(ship_screen_pos.y, -10.0f, 30.0f);
 
 		t += speed * dt;
@@ -336,23 +344,32 @@ edaf80::Assignment5::run()
 		glm::vec3 new_ship_pos = p + dir * ship_screen_pos.x + glm::vec3(0.0f, ship_screen_pos.y, 0.0f);
 
 		float t = dt * 5.0;
-		new_ship_look_pos = new_ship_look_pos * (1.0f - t) + new_ship_pos * t;
+		// new_ship_look_pos = new_ship_look_pos * (1.0f - t) + new_ship_pos * t;
+		new_ship_look_pos = new_ship_pos;
 
-		auto dir2 = glm::cross(glm::vec3(0.0, 1.0, 0.0), (-dir));
-		mCamera.mWorld.SetTranslate(p - dir2 * 130.0f + dir * ship_screen_pos.x * 0.3f);
+		auto dir2 = -glm::cross(glm::vec3(0.0, 1.0, 0.0), (-dir));
+		dir2.y += 0.3;
+		dir2 = glm::normalize(dir2);
+
+		mCamera.mWorld.SetTranslate(
+			p
+				+ dir2 * 50.0f
+				+ dir * ship_screen_pos.x * 1.0f
+			    + glm::vec3(0.0, 1.0, 0.0) * (ship_screen_pos.y * 0.8f)
+		);
 		mCamera.mWorld.LookAt(new_ship_look_pos);
 
 		auto& ship_transform = space_ship_node.get_transform();
 		ship_transform.SetTranslate(new_ship_pos);
 
-		std::vector<int> to_remove;
 
 		sphere_t player_sphere = sphere_t {
 			.radius = 3.0f,
 			.point = new_ship_pos,
 		};
 
-	    for(unsigned int i = 0u; i < Targets_node.size(); ++i){
+		std::vector<int> to_remove;
+	    for (unsigned int i = 0u; i < Targets_node.size(); ++i){
 	        auto& the_node = Targets_node[i];
 
 			float speed = Targets_speed[i];
@@ -364,8 +381,8 @@ edaf80::Assignment5::run()
 
 			auto p = glm::vec3(cos(t), 0.0, sin(t)) * r;
 			auto target_pos = origin + p + glm::vec3(0.0, y, 0.0);
-      the_node.get_transform().SetTranslate(target_pos);
-					// the_node.get_transform().SetRotate();
+		    the_node.get_transform().SetTranslate(target_pos);
+			the_node.get_transform().SetScale(glm::vec3(1.0, 1.0, 1.0) * 2.0f);
 			the_node.get_transform().SetRotateY(-t);
 
 			sphere_t target_sphere = sphere_t {
@@ -375,19 +392,24 @@ edaf80::Assignment5::run()
 
 			if (sphere_v_sphere(player_sphere, target_sphere)) {
 				score += 100;
+				if (score >= 1500) {
+					game_done = true;
+				}
 				to_remove.push_back(i);
 			}
 	     }
 
 		for (int i = 0; i < to_remove.size(); i++) {
-			Targets_node.erase(Targets_node.begin() + i);
-			Targets_rad.erase(Targets_rad.begin() + i);
-			Targets_t.erase(Targets_t.begin() + i);
-			Targets_y.erase(Targets_y.begin() + i);
-			Targets_speed.erase(Targets_speed.begin() + i);
+			int r = to_remove[i];
+
+			Targets_speed.erase(Targets_speed.begin() + r);
+			Targets_node. erase( Targets_node.begin() + r);
+			Targets_rad.  erase(  Targets_rad.begin() + r);
+			Targets_t.    erase(    Targets_t.begin() + r);
+			Targets_y.    erase(    Targets_y.begin() + r);
 		}
 
-		mCamera.mWorld.SetTranslate(glm::vec3(0.0, 10.0, 0.0));
+		// mCamera.mWorld.SetTranslate(glm::vec3(0.0, 10.0, 0.0));
 
 		camera_position = mCamera.mWorld.GetTranslation();
 
@@ -449,7 +471,7 @@ edaf80::Assignment5::run()
 
 		bool opened = ImGui::Begin("Scene Control", nullptr, ImGuiWindowFlags_None | ImGuiWindowFlags_NoTitleBar);
 		if (opened) {
-			float s = (50.0f - elapsed_time_s);
+			float s = (50.0f - elapsed_game_time_s);
 			ImGui::DragInt(" Points", &score, 0.1f, 0, 999999999);
 			ImGui::DragFloat(" s", &s, 0.1f, 0, 99999999.0f);
 		}
